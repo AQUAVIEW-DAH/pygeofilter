@@ -491,6 +491,62 @@ def test_not_eq():
     assert result == ast.Not(ast.Equal(ast.Attribute("attr"), 2))
 
 
+def test_not_double_parens():
+    result = parse("NOT ((attr = 2))")
+    assert result == ast.Not(ast.Equal(ast.Attribute("attr"), 2))
+
+
+def test_not_or():
+    result = parse("NOT (attr = 1 OR attr = 2)")
+    assert result == ast.Not(
+        ast.Or(
+            ast.Equal(ast.Attribute("attr"), 1),
+            ast.Equal(ast.Attribute("attr"), 2),
+        )
+    )
+
+
+def test_not_binds_tighter_than_and():
+    result = parse("NOT attr = 1 AND attr = 2")
+    assert result == ast.And(
+        ast.Not(ast.Equal(ast.Attribute("attr"), 1)),
+        ast.Equal(ast.Attribute("attr"), 2),
+    )
+
+
+def test_and_binds_tighter_than_or():
+    result = parse("attr = 1 OR attr = 2 AND attr = 3")
+    assert result == ast.Or(
+        ast.Equal(ast.Attribute("attr"), 1),
+        ast.And(
+            ast.Equal(ast.Attribute("attr"), 2),
+            ast.Equal(ast.Attribute("attr"), 3),
+        ),
+    )
+
+
+def test_and_then_or():
+    result = parse("attr = 1 AND attr = 2 OR attr = 3")
+    assert result == ast.Or(
+        ast.And(
+            ast.Equal(ast.Attribute("attr"), 1),
+            ast.Equal(ast.Attribute("attr"), 2),
+        ),
+        ast.Equal(ast.Attribute("attr"), 3),
+    )
+
+
+def test_parens_override_precedence():
+    result = parse("(attr = 1 OR attr = 2) AND attr = 3")
+    assert result == ast.And(
+        ast.Or(
+            ast.Equal(ast.Attribute("attr"), 1),
+            ast.Equal(ast.Attribute("attr"), 2),
+        ),
+        ast.Equal(ast.Attribute("attr"), 3),
+    )
+
+
 def test_not_group_with_or():
     # CQL2: NOT applies to any boolean primary, a parenthesized expression included.
     result = parse("NOT (attr = 1 OR attr = 2)")
