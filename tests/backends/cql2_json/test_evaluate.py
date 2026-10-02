@@ -26,7 +26,10 @@ def encoded(text):
         ("attr NOT LIKE 'some%'", "NOT (attr LIKE 'some%')"),
         ("attr NOT IN ('a', 'b')", "NOT (attr IN ('a', 'b'))"),
         ("attr NOT BETWEEN 2 AND 5", "NOT (attr BETWEEN 2 AND 5)"),
-        ("CASEI(attr) NOT LIKE CASEI('some%')", "NOT (CASEI(attr) LIKE CASEI('some%'))"),
+        (
+            "CASEI(attr) NOT LIKE CASEI('some%')",
+            "NOT (CASEI(attr) LIKE CASEI('some%'))",
+        ),
     ],
 )
 def test_a_negated_predicate_is_encoded_as_not(negated, grouped):
@@ -51,7 +54,11 @@ def test_a_plain_predicate_is_not_negated(text):
 
 @pytest.mark.parametrize(
     "text",
-    ["attr NOT LIKE 'some%'", "attr NOT IN ('a', 'b')", "attr NOT BETWEEN 2 AND 5"],
+    [
+        "attr NOT LIKE 'some%'",
+        "attr NOT IN ('a', 'b')",
+        "attr NOT BETWEEN 2 AND 5",
+    ],
 )
 def test_the_encoding_reads_back_as_a_negation(text):
     # CQL2 JSON read back gives Not(predicate), the same filter as the text.
