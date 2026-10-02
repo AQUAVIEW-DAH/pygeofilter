@@ -489,3 +489,52 @@ def test_not_lt():
 def test_not_eq():
     result = parse("NOT(attr = 2)")
     assert result == ast.Not(ast.Equal(ast.Attribute("attr"), 2))
+
+
+def test_not_group_with_or():
+    # CQL2: NOT applies to any boolean primary, a parenthesized expression included.
+    result = parse("NOT (attr = 1 OR attr = 2)")
+    assert result == ast.Not(
+        ast.Or(
+            ast.Equal(ast.Attribute("attr"), 1),
+            ast.Equal(ast.Attribute("attr"), 2),
+        )
+    )
+
+
+def test_not_group_with_and():
+    result = parse("NOT (attr > 1 AND other LIKE 'a%')")
+    assert result == ast.Not(
+        ast.And(
+            ast.GreaterThan(ast.Attribute("attr"), 1),
+            ast.Like(
+                ast.Attribute("other"), "a%", False, "%", ".", "\\", False
+            ),
+        )
+    )
+
+
+def test_not_nested_group():
+    result = parse("NOT ((attr = 1 OR attr = 2) AND other = 3)")
+    assert result == ast.Not(
+        ast.And(
+            ast.Or(
+                ast.Equal(ast.Attribute("attr"), 1),
+                ast.Equal(ast.Attribute("attr"), 2),
+            ),
+            ast.Equal(ast.Attribute("other"), 3),
+        )
+    )
+
+
+def test_not_group_inside_a_condition():
+    result = parse("attr = 1 AND NOT (other = 2 OR other = 3)")
+    assert result == ast.And(
+        ast.Equal(ast.Attribute("attr"), 1),
+        ast.Not(
+            ast.Or(
+                ast.Equal(ast.Attribute("other"), 2),
+                ast.Equal(ast.Attribute("other"), 3),
+            )
+        ),
+    )

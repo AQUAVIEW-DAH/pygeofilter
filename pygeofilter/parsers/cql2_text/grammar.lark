@@ -33,7 +33,7 @@
 
 ?condition_1: predicate
             | "NOT"i predicate                                               -> not_
-            | "NOT"i "(" predicate ")"                                       -> not_
+            | "NOT"i "(" condition ")"                                       -> not_
             | "(" condition ")"
 
 ?predicate: expression "=" expression                                       -> eq
