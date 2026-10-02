@@ -43,6 +43,14 @@ def json_serializer(obj):
     raise TypeError(f"{obj} with type {type(obj)} is not serializable.")
 
 
+def negated(node, encoded: Dict) -> Dict:
+    """CQL2 JSON has no NOT LIKE, NOT IN, NOT BETWEEN, or IS NOT NULL: a negated
+    predicate is the predicate wrapped in a ``not``."""
+    if node.not_:
+        return {"op": "not", "args": [encoded]}
+    return encoded
+
+
 class CQL2Evaluator(Evaluator):
     def __init__(
         self,
@@ -67,18 +75,15 @@ class CQL2Evaluator(Evaluator):
 
     @handle(ast.Between)
     def between(self, node, lhs, low, high):
-        return {"op": "between", "args": [lhs, [low, high]]}
+        return negated(node, {"op": "between", "args": [lhs, [low, high]]})
 
     @handle(ast.Like)
     def like(self, node, *subargs):
-        return {"op": "like", "args": [subargs[0], node.pattern]}
+        return negated(node, {"op": "like", "args": [subargs[0], node.pattern]})
 
     @handle(ast.IsNull)
     def isnull(self, node, arg):
-        ret = {"op": "isNull", "args": [arg]}
-        if node.not_:
-            ret = {"op": "not", "args": [ret]}
-        return ret
+        return negated(node, {"op": "isNull", "args": [arg]})
 
     @handle(ast.Function)
     def function(self, node, *args):
@@ -93,7 +98,7 @@ class CQL2Evaluator(Evaluator):
 
     @handle(ast.In)
     def in_(self, node, lhs, *options):
-        return {"op": "in", "args": [lhs, options]}
+        return negated(node, {"op": "in", "args": [lhs, options]})
 
     @handle(ast.Attribute)
     def attribute(self, node: ast.Attribute):
